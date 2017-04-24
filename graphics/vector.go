@@ -33,11 +33,11 @@ func (v Vector) Subtract(o Vector) Vector {
 	return NewVector(v.X-o.X, v.Y-o.Y, v.Z-o.Z)
 }
 
-func (v Vector) MultiplyScalar(s float64) Vector {
+func (v Vector) Multiply(s float64) Vector {
 	return NewVector(v.X*s, v.Y*s, v.Z*s)
 }
 
-func (v Vector) DivideScalar(s float64) Vector {
+func (v Vector) Divide(s float64) Vector {
 	return NewVector(v.X/s, v.Y/s, v.Z/s)
 }
 
@@ -49,12 +49,20 @@ func (v Vector) MagnitudeSqr() float64 {
 	return v.X*v.X + v.Y*v.Y*v.Z*v.Z
 }
 
-func (v Vector) Distance(o Vector) Vector {
-	panic("Not yet implemented")
+func (v Vector) Distance(o Vector) float64 {
+	return math.Sqrt(v.DistanceSqr(o))
+}
+
+func (v Vector) DistanceSqr(o Vector) float64 {
+	x := o.X - v.X
+	y := o.Y - v.Y
+	z := o.Z - v.Z
+
+	return x*x + y*y + z*z
 }
 
 func (v Vector) Normalize() Vector {
-	panic("Not yet implemented")
+	return v.Divide(v.Magnitude())
 }
 
 func (v Vector) String() string {

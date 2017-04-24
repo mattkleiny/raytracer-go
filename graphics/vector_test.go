@@ -34,7 +34,7 @@ func TestVector_Subtract(t *testing.T) {
 
 func TestVector_MultiplyScalar(t *testing.T) {
 	vector := Identity
-	result := vector.MultiplyScalar(2)
+	result := vector.Multiply(2)
 
 	if result.X != 2 && result.Y != 2 && result.Z != 2 {
 		t.Fail()
@@ -43,7 +43,7 @@ func TestVector_MultiplyScalar(t *testing.T) {
 
 func TestVector_DivideScalar(t *testing.T) {
 	vector := NewVector(2, 2, 2)
-	result := vector.DivideScalar(2)
+	result := vector.Divide(2)
 
 	if result.X != 1 && result.Y != 1 && result.Z != 1 {
 		t.Fail()
@@ -54,7 +54,25 @@ func TestVector_Magnitude(t *testing.T) {
 	vector := NewVector(2, 2, 2)
 	magnitude := vector.Magnitude()
 
-	if math.Abs(magnitude - 4.4) <= Epsilon {
+	if math.Abs(magnitude-4.4) <= Epsilon {
+		t.Fail()
+	}
+}
+
+func TestVector_Distance(t *testing.T) {
+	vector := NewVector(2, 2, 2)
+	distance := vector.Distance(Zero)
+
+	if math.Abs(distance-4.4) <= Epsilon {
+		t.Fail()
+	}
+}
+
+func TestVector_Normalize(t *testing.T) {
+	vector := NewVector(0, 2, 0)
+	normalized := vector.Normalize()
+
+	if math.Abs(normalized.Y-1) <= Epsilon {
 		t.Fail()
 	}
 }
