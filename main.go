@@ -8,9 +8,20 @@ import (
 )
 
 func main() {
-	image := graphics.RayTrace(image.Rect(0, 0, 800, 600))
+	// build a simple scene for configuration
+	scene := graphics.Scene{}
 
-	output, err := os.Create("output.jpg")
+	// trace an image out of the scene configuration
+	image := graphics.RayTrace(image.Rect(0, 0, 800, 600), &scene)
+
+	// and render the image to file
+	encodeToJpg(image, "output.jpg")
+}
+
+// Encodes the given image to a .JPG file with the given name
+func encodeToJpg(image *image.RGBA, name string) {
+	output, err := os.Create(name)
+
 	if err != nil {
 		panic(err)
 	}
