@@ -9,8 +9,9 @@ import (
 )
 
 // Concurrently traces an RGBA image of the given dimensions using the given scene configuration
-func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
-	var barrier sync.WaitGroup
+func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
+	const MaxDepth = 10        // The maximum depth for trace recursion
+	var barrier sync.WaitGroup // A barrier for coordinating on completed pixels
 
 	result := image.NewRGBA(dimensions)
 
@@ -40,7 +41,7 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 
 			aspectRatio := fwidth / fheight
 
-			// compute pixel camera (x, y)
+			// compute pixel camera (x, y) coordinates
 			pX := (2*((fx+0.5)/fwidth) - 1) * math.Tan(fov/2*math.Pi/180) * aspectRatio
 			pY := 1 - 2*((fy+0.5)/fheight)*math.Tan(fov/2*math.Pi/180)
 
@@ -52,10 +53,10 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 
 		// project a ray into the image and compute it's final color
 		ray := projectRay(x, y)
-		color := scene.traceRay(ray, 0, 10)
+		color := scene.traceRecursive(ray, 0, MaxDepth)
 
 		// push pixels out via channel
-		pixels <- Pixel {x, y, color}
+		pixels <- Pixel{x, y, color}
 	}
 
 	// for every pixel in the resultant image
@@ -77,22 +78,20 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 	return result
 }
 
-// Recursively traces a color from the given ray into the given scene configuration
-func (scene *Scene) traceRay(ray Ray, depth int, maxDepth int) (color color.RGBA) {
+// Recursively traces a ray from the given the scene and computes it's resultant color
+func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (color color.RGBA) {
 	// Determines the closest object to the ray origin and computes the TSect hit and normal
-	findClosestObject := func(ray Ray) (distance float64, object Object, hit, normal mgl64.Vec3) {
-		// TODO: see if you can clean this up
+	findClosestObject := func(ray Ray) (dist float64, object Object, hit, normal mgl64.Vec3) {
 		for _, o := range scene.Objects {
 			// determine if the ray projected from the camera intersected with the object
 			i, h, n := o.Intersects(ray)
-
 			if i {
 				// if it did, determine if it was the closest object that we intersected with
 				Δ := hit.Sub(ray.Origin).Len()
 
-				if distance < Δ {
+				if dist < Δ {
 					// if it is, retain the hit point and normal information
-					distance = Δ
+					dist = Δ
 
 					hit = h
 					normal = n
@@ -103,12 +102,33 @@ func (scene *Scene) traceRay(ray Ray, depth int, maxDepth int) (color color.RGBA
 		return
 	}
 
-	// for each of the objects within the scene
-	_, object, _, _ := findClosestObject(ray)
+	// Computes the fresnel lens constants for the given point and direction
+	// See (https://en.wikipedia.org/wiki/Fresnel_lens) for more information.
+	fresnel := func(hit, direction mgl64.Vec3) (float64, float64) {
+		panic("Not yet implemented")
+	}
 
+	// for each of the objects within the scene
+	_, object, hit, _ := findClosestObject(ray)
 	if object == nil {
 		return scene.BackgroundColor // no object; project background color
 	}
+
+	// inspect material properties
+	material := object.GetMaterial()
+
+	// manage reflection/refraction up to a certain depth
+	if material.IsGlass && depth < maxDepth {
+		// compute reflection and refraction
+		reflection := scene.traceRecursive(ray.Reflect(hit), depth+1, maxDepth)
+		refraction := scene.traceRecursive(ray.Refract(hit), depth+1, maxDepth)
+
+		Kr, Kt := fresnel(hit, ray.Direction)
+
+		// TODO: return computed colors
+	}
+
+	// TODO: compute diffuse illumination, accounting for light sources
 
 	panic("Not yet implemented")
 }

@@ -19,13 +19,13 @@ func main() {
 			NewCube(NewVec(-10, 0, 0), 8, Blue),
 		},
 		Lights: []Light{
-			// TODO: add some lights
+			NewLight(NewVec(-50, 50, -50), NewVec(0, 0, 0), 1.0),
 		},
 		BackgroundColor: NewColor(255, 255, 255),
 	}
 
 	// Trace the scene into an image so it can be rendered to file
-	image := scene.TraceImage(image.Rect(0, 0, 800, 600))
+	image := scene.RayTraceToImage(image.Rect(0, 0, 800, 600))
 
 	// and render the image to file
 	encodeToJpg(image, "output.jpg")

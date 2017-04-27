@@ -28,14 +28,16 @@ type Camera struct {
 
 // Represents a light in the world
 type Light struct {
-	Direction Ray        // The direction of the light, as a ray
-	Color     color.RGBA // The color of the light
+	Position   mgl64.Vec3 // The position of the light
+	Direction  mgl64.Vec3 // The direction of the light
+	Brightness float64    // The brightness of the light
 }
 
 // Represents a specific object within a scene
 type Object interface {
 	// Determines if the object intersects with the given ray, and computes the hit and normal
 	Intersects(ray Ray) (intersects bool, hit, normal mgl64.Vec3)
+	GetMaterial() *Material // The object's material
 }
 
 // Represents a sphere that can be placed in a scene
@@ -71,10 +73,10 @@ func NewVec(x, y, z float64) mgl64.Vec3 {
 
 // Creates a new ray with the given components
 func NewRay(origin, direction mgl64.Vec3) Ray {
-	return Ray{origin, direction}
+	return Ray{Origin: origin, Direction: direction}
 }
 
-// Creates a new sphere at the given position with the given radius and material
+// Creates a new sphere at the given position with +the given radius and material
 func NewSphere(position mgl64.Vec3, radius float64, material Material) *Sphere {
 	return &Sphere{Position: position, Radius: radius, Material: material}
 }
@@ -82,6 +84,21 @@ func NewSphere(position mgl64.Vec3, radius float64, material Material) *Sphere {
 // Creates a new cube at the given position with the given cubed-size and material
 func NewCube(position mgl64.Vec3, size float64, material Material) *Cube {
 	return &Cube{Position: position, Size: size, Material: material}
+}
+
+// Creates a new light at the given position with the given direction and brightness
+func NewLight(position, direction mgl64.Vec3, brightness float64) Light {
+	return Light{Position: position, Direction: direction, Brightness: brightness}
+}
+
+// Computes a reflected ray at the given hit point
+func (ray Ray) Reflect(hit mgl64.Vec3) Ray {
+	panic("Not yet implemented")
+}
+
+// Computes a refracted ray at the given hit point
+func (ray Ray) Refract(hit mgl64.Vec3) Ray {
+	panic("Not yet implemented")
 }
 
 // Calculates whether the sphere intersects with the given ray, and computes the hit and normal
@@ -92,6 +109,16 @@ func (sphere *Sphere) Intersects(ray Ray) (intersects bool, hit, normal mgl64.Ve
 // Calculates whether the cube intersects with the given ray, and computes the hit and normal
 func (cube *Cube) Intersects(ray Ray) (intersects bool, hit, normal mgl64.Vec3) {
 	panic("Not yet implemented")
+}
+
+// Retrieves the sphere's material
+func (sphere *Sphere) GetMaterial() *Material {
+	return &sphere.Material
+}
+
+// Retrieves the cube's material
+func (cube *Cube) GetMaterial() *Material {
+	return &cube.Material
 }
 
 // Creates a new RGBA color with the given channel values
