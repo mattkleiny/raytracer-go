@@ -1,6 +1,15 @@
 package graphics
 
-import "image/color"
+import (
+	"image/color"
+	"github.com/go-gl/mathgl/mgl64"
+)
+
+// Represents a ray projected into 3d space
+type Ray struct {
+	Origin    mgl64.Vec3
+	Direction mgl64.Vec3
+}
 
 // Represents a scene configuration for the ray-tracer; provides objects and materials which compose
 // the scene structure and layout
@@ -13,8 +22,8 @@ type Scene struct {
 
 // Represents a camera within the world
 type Camera struct {
-	Position    Vector  // The position of the camera
-	FieldOfView float64 // The field of view, in degrees
+	Position    mgl64.Vec3 // The position of the camera
+	FieldOfView float64    // The field of view, in degrees
 }
 
 // Represents a light in the world
@@ -26,19 +35,19 @@ type Light struct {
 // Represents a specific object within a scene
 type Object interface {
 	// Determines if the object intersects with the given ray, and computes the hit and normal
-	Intersects(ray Ray) (intersects bool, hit, normal Vector)
+	Intersects(ray Ray) (intersects bool, hit, normal mgl64.Vec3)
 }
 
 // Represents a sphere that can be placed in a scene
 type Sphere struct {
-	Position Vector
+	Position mgl64.Vec3
 	Radius   float64
 	Material Material
 }
 
 // Represents a cube that can be placed in a scene
 type Cube struct {
-	Position Vector
+	Position mgl64.Vec3
 	Size     float64
 	Material Material
 }
@@ -55,23 +64,33 @@ var (
 	Blue  = Material{Diffuse: NewColor(0, 0, 255)}
 )
 
+// Creates a new vector with the given components
+func NewVec(x, y, z float64) mgl64.Vec3 {
+	return mgl64.Vec3{x, y, z}
+}
+
+// Creates a new ray with the given components
+func NewRay(origin, direction mgl64.Vec3) Ray {
+	return Ray{origin, direction}
+}
+
 // Creates a new sphere at the given position with the given radius and material
-func NewSphere(position Vector, radius float64, material Material) *Sphere {
+func NewSphere(position mgl64.Vec3, radius float64, material Material) *Sphere {
 	return &Sphere{Position: position, Radius: radius, Material: material}
 }
 
 // Creates a new cube at the given position with the given cubed-size and material
-func NewCube(position Vector, size float64, material Material) *Cube {
+func NewCube(position mgl64.Vec3, size float64, material Material) *Cube {
 	return &Cube{Position: position, Size: size, Material: material}
 }
 
 // Calculates whether the sphere intersects with the given ray, and computes the hit and normal
-func (sphere *Sphere) Intersects(ray Ray) (intersects bool, hit, normal Vector) {
+func (sphere *Sphere) Intersects(ray Ray) (intersects bool, hit, normal mgl64.Vec3) {
 	panic("Not yet implemented")
 }
 
 // Calculates whether the cube intersects with the given ray, and computes the hit and normal
-func (cube *Cube) Intersects(ray Ray) (intersects bool, hit, normal Vector) {
+func (cube *Cube) Intersects(ray Ray) (intersects bool, hit, normal mgl64.Vec3) {
 	panic("Not yet implemented")
 }
 

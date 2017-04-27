@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"math"
 	"sync"
+	"github.com/go-gl/mathgl/mgl64"
 )
 
 // Concurrently traces an RGBA image of the given dimensions using the given scene configuration
@@ -31,11 +32,11 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 			fov := scene.Camera.FieldOfView
 
 			// manually cast to floating point; because go-lang
-			fwidth := float64(width)
-			fheight := float64(height)
-
 			fx := float64(x)
 			fy := float64(y)
+
+			fwidth := float64(width)
+			fheight := float64(height)
 
 			aspectRatio := fwidth / fheight
 
@@ -43,22 +44,18 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 			pX := (2*((fx+0.5)/fwidth) - 1) * math.Tan(fov/2*math.Pi/180) * aspectRatio
 			pY := 1 - 2*((fy+0.5)/fheight)*math.Tan(fov/2*math.Pi/180)
 
-			// TODO: account for camera-to-world transformation here? (will need a matrix)
-
 			origin := scene.Camera.Position
-			direction := NewVector(pX, pY, -1).Subtract(origin).Normalize()
+			direction := NewVec(pX, pY, -1).Sub(origin).Normalize()
 
 			return NewRay(origin, direction)
 		}
 
-		defer barrier.Done() // signal this pixel is completed
-
 		// project a ray into the image and compute it's final color
 		ray := projectRay(x, y)
-		color := scene.trace(ray, 0, 10)
+		color := scene.traceRay(ray, 0, 10)
 
 		// push pixels out via channel
-		pixels <- Pixel{x, y, color}
+		pixels <- Pixel {x, y, color}
 	}
 
 	// for every pixel in the resultant image
@@ -81,9 +78,9 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 }
 
 // Recursively traces a color from the given ray into the given scene configuration
-func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (color color.RGBA) {
+func (scene *Scene) traceRay(ray Ray, depth int, maxDepth int) (color color.RGBA) {
 	// Determines the closest object to the ray origin and computes the TSect hit and normal
-	findClosestObject := func(ray Ray) (distance float64, object Object, hit, normal Vector) {
+	findClosestObject := func(ray Ray) (distance float64, object Object, hit, normal mgl64.Vec3) {
 		// TODO: see if you can clean this up
 		for _, o := range scene.Objects {
 			// determine if the ray projected from the camera intersected with the object
@@ -91,7 +88,7 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (color color.RGBA) {
 
 			if i {
 				// if it did, determine if it was the closest object that we intersected with
-				Δ := ray.Origin.DistanceSqr(hit)
+				Δ := hit.Sub(ray.Origin).Len()
 
 				if distance < Δ {
 					// if it is, retain the hit point and normal information
