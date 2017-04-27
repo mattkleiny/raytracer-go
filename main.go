@@ -1,21 +1,35 @@
 package main
 
 import (
-	"os"
+	"flag"
 	"image"
+	"os"
+	"log"
 	"image/jpeg"
 	. "github.com/xeusalmighty/raytracer/graphics"
 )
 
+var (
+	filenameFlag = flag.String("filename", "output.jpg", "filename of the resultant .jpg")
+)
+
 func main() {
-	// Create a simple scene with a few objects
+	// parse command line
+	flag.Parse()
+
+	if *filenameFlag == "" {
+		flag.Usage()
+		log.Fatal("No filename specified")
+	}
+
+	// create a simple scene with a few objects
 	scene := Scene{
 		Camera: Camera{
 			Position:    V(0, 50, -50),
 			FieldOfView: 75.0, // 75°
 		},
 		Objects: []Object{
-			Sphere{
+			&Sphere{
 				Position: V(0, 0, 0),
 				Radius:   8.0,
 				Material: Material{
@@ -23,7 +37,7 @@ func main() {
 					IsGlass: true,
 				},
 			},
-			Cube{
+			&Cube{
 				Position: V(-10, 0, 0),
 				Size:     8.0,
 				Material: Material{
@@ -40,11 +54,11 @@ func main() {
 		Color: V(1.0, 1.0, 1.0),
 	}
 
-	// Trace the scene into an image so it can be rendered to file
+	// trace the scene into an image so it can be rendered to file
 	image := scene.RayTraceToImage(image.Rect(0, 0, 800, 600))
 
 	// and render the image to file
-	encodeToJpg(image, "output.jpg")
+	encodeToJpg(image, *filenameFlag)
 }
 
 // Encodes the given image to a .JPG file with the given name
