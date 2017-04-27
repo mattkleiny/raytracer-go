@@ -18,10 +18,8 @@ func main() {
 			NewSphere(Origin, 8, Green),
 			NewCube(NewVec(-10, 0, 0), 8, Blue),
 		},
-		Lights: []Light{
-			NewLight(NewVec(-50, 50, -50), Origin, 1.0),
-		},
-		BackgroundColor: NewColor(255, 255, 255),
+		Light: NewLight(NewVec(-50, 50, -50), Origin, 1.0),
+		Color: NewColor(255, 255, 255),
 	}
 
 	// Trace the scene into an image so it can be rendered to file

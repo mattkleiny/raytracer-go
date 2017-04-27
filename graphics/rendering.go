@@ -79,7 +79,7 @@ func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
 }
 
 // Recursively traces a ray from the given the scene and computes it's resultant color
-func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec4) {
+func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec3) {
 	// Determines the closest object to the ray origin and computes the TSect hit and normal
 	findClosestObject := func(ray Ray) (dist float64, object Object, hit, normal mgl64.Vec3) {
 		for _, o := range scene.Objects {
@@ -109,26 +109,34 @@ func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec4
 	}
 
 	// for each of the objects within the scene
-	_, object, hit, _ := findClosestObject(ray)
+	_, object, hit, normal := findClosestObject(ray)
 	if object == nil {
 		return nil
 	}
 
 	// inspect material properties
 	material := object.GetMaterial()
+	light := scene.Light
 
 	// manage reflection/refraction up to a certain depth
 	if material.IsGlass && depth < maxDepth {
 		// compute reflection and refraction colors
-		reflection := scene.traceRecursive(ray.Reflect(hit), depth+1, maxDepth)
-		refraction := scene.traceRecursive(ray.Refract(hit), depth+1, maxDepth)
+		reflection := scene.traceRecursive(ray.Reflect(normal), depth+1, maxDepth)
+		refraction := scene.traceRecursive(ray.Refract(normal), depth+1, maxDepth)
 
-		Kr, Kt := fresnel(hit, ray.Direction)
+		Kr, Kt := fresnel(normal, ray.Direction)
 
 		return reflection.Mul(Kr).Add(refraction.Mul(1 - Kt))
 	}
 
-	// TODO: compute diffuse illumination, accounting for light sources
+	// compute diffuse illumination, accounting for light sources and shadows
+	shadowRay := NewRay(hit, hit.Sub(light.Position))
 
-	panic("Not yet implemented")
+	for _, object := range scene.Objects {
+		if object.Intersects(shadowRay) {
+			return nil // object is in shadow, so no light is provided
+		}
+	}
+
+	return material.Diffuse.Mul(light.Brightness)
 }

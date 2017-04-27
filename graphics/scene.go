@@ -15,10 +15,10 @@ type Ray struct {
 // Represents a scene configuration for the ray-tracer; provides objects and materials which compose
 // the scene structure and layout
 type Scene struct {
-	Camera          Camera     // The main scene camera
-	Objects         []Object   // The objects composing the scene itself (cubes, spheres, etc)
-	Lights          []Light    // The lights within the world
-	BackgroundColor color.RGBA // The background color of the scene
+	Camera  Camera     // The main scene camera
+	Objects []Object   // The objects composing the scene itself (cubes, spheres, etc)
+	Light   Light      // The global world light
+	Color   color.RGBA // The background color of the scene
 }
 
 // Represents a camera within the world
@@ -57,15 +57,15 @@ type Cube struct {
 
 // Describes the material surface of an object within a scene
 type Material struct {
-	Diffuse color.RGBA // The diffuse color of the material
+	Diffuse mgl64.Vec3 // The diffuse color of the material
 	IsGlass bool       // If the material is glass, it possesses unique reflection properties
 }
 
 // Some commonly used materials
 var (
 	Origin = NewVec(0, 0, 0) // Origin in world-space
-	Green  = Material{Diffuse: NewColor(0, 255, 0)}
-	Blue   = Material{Diffuse: NewColor(0, 0, 255)}
+	Green  = Material{Diffuse: NewVec(0, 1.0, 0)}
+	Blue   = Material{Diffuse: NewVec(0, 0, 1.0)}
 )
 
 // Creates a new vector with the given components
@@ -99,7 +99,7 @@ func NewColor(r, g, b uint8) color.RGBA {
 }
 
 // Creates a new RGBA color with the given channel values
-func ConvertToRGBA(vec mgl64.Vec4) color.RGBA {
+func ConvertToRGBA(vec mgl64.Vec3) color.RGBA {
 	// Clamps a floating point representation of an RGBA color into an RGBA struct
 	clamp := func(value float64) uint8 {
 		if value == 1.0 {
@@ -112,7 +112,7 @@ func ConvertToRGBA(vec mgl64.Vec4) color.RGBA {
 		R: clamp(vec[0]),
 		G: clamp(vec[1]),
 		B: clamp(vec[2]),
-		A: clamp(vec[3]),
+		A: 255,
 	}
 }
 
