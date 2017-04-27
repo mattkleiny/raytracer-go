@@ -11,16 +11,12 @@ import (
 
 var (
 	filenameFlag = flag.String("filename", "output.jpg", "filename of the resultant .jpg")
+	widthFlag    = flag.Int("width", 1000, "The width of the image to create")
+	heightFlag   = flag.Int("height", 1000, "The height of the image to create")
 )
 
 func main() {
-	// parse command line
-	flag.Parse()
-
-	if *filenameFlag == "" {
-		flag.Usage()
-		log.Fatal("No filename specified")
-	}
+	parseCommandLine()
 
 	// create a simple scene with a few objects
 	scene := Scene{
@@ -55,10 +51,30 @@ func main() {
 	}
 
 	// trace the scene into an image so it can be rendered to file
-	image := scene.RayTraceToImage(image.Rect(0, 0, 800, 600))
+	image := scene.RayTraceToImage(image.Rect(0, 0, *widthFlag, *heightFlag))
 
 	// and render the image to file
 	encodeToJpg(image, *filenameFlag)
+}
+
+// Parses the command line and reports any errors
+func parseCommandLine() {
+	flag.Parse()
+
+	if *filenameFlag == "" {
+		flag.Usage()
+		log.Fatal("No filename specified")
+	}
+
+	if *widthFlag == 0 {
+		flag.Usage()
+		log.Fatal("No width specified")
+	}
+
+	if *heightFlag == 0 {
+		flag.Usage()
+		log.Fatal("No height specified")
+	}
 }
 
 // Encodes the given image to a .JPG file with the given name
