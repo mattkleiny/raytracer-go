@@ -15,22 +15,22 @@ type Object struct {
 	Material Material // The material surface of the object
 }
 
-// Calculates whether the given ray intersects the object and computes the hit and normal vector
+// Creates a new sphere at the given position with the given radius and material
 func NewSphere(position Vector, radius float64, material Material) Object {
 	panic("Not yet implemented")
 }
 
-// Commonly used materials
+// Creates a new cube at the given position with the given cubed-size and material
 func NewCube(position Vector, size float64, material Material) Object {
 	panic("Not yet implemented")
 }
 
-// Creates a new sphere at the given position with the given radius and material
+// Calculates whether the object intersects with the given ray, and computes the hit and normal
 func (object *Object) Intersects(ray Ray) (intersects bool, hit, normal Vector) {
 	panic("Not yet implemented")
 }
 
-// Creates a new cube at the given position with the given size and material
+// Describes the material surface of an object within a scene
 type Material struct {
 	DiffuseColor color.RGBA
 }
