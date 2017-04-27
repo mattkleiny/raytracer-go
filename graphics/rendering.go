@@ -3,15 +3,11 @@ package graphics
 import (
 	"image/color"
 	"image"
+	"math"
 )
 
-// Represents a scene configuration for the ray-tracer; provides objects and materials which compose
-// the scene structure and layout
-type Scene struct {
-}
-
-// Traces an RGBA image of the given dimensions using the given scene configuration
-func RayTrace(dimensions image.Rectangle, scene *Scene) (*image.RGBA) {
+// Serially traces an RGBA image of the given dimensions using the given scene configuration
+func (scene *Scene) TraceToImage(dimensions image.Rectangle) (*image.RGBA) {
 	result := image.NewRGBA(dimensions)
 
 	width := result.Rect.Size().X
@@ -21,8 +17,8 @@ func RayTrace(dimensions image.Rectangle, scene *Scene) (*image.RGBA) {
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 			// project a ray into the image and compute it's final color
-			ray := computeRay(x, y)
-			color := rayTrace(ray, 0, scene)
+			ray := ProjectRay(scene.Camera, x, y)
+			color := scene.traceRay(ray, 0)
 
 			result.Set(x, y, color)
 		}
@@ -32,7 +28,7 @@ func RayTrace(dimensions image.Rectangle, scene *Scene) (*image.RGBA) {
 }
 
 // Concurrently traces an RGBA image of the given dimensions using the given scene configuration
-func RayTraceConcurrent(dimensions image.Rectangle, scene *Scene) (*image.RGBA) {
+func (scene *Scene) TraceToImageConcurrent(dimensions image.Rectangle) (*image.RGBA) {
 	type ColorAndPoint struct {
 		X, Y  int
 		Color color.RGBA
@@ -52,11 +48,11 @@ func RayTraceConcurrent(dimensions image.Rectangle, scene *Scene) (*image.RGBA) 
 			go func() {
 				// project a ray into the image and compute it's final color;
 				// capture it's input point as well so we can compose in parallel
-				ray := computeRay(x, y)
+				ray := ProjectRay(scene.Camera, x, y)
 				colors <- ColorAndPoint{
 					X:     x,
 					Y:     y,
-					Color: rayTrace(ray, 0, scene),
+					Color: scene.traceRay(ray, 0),
 				}
 			}()
 		}
@@ -67,12 +63,33 @@ func RayTraceConcurrent(dimensions image.Rectangle, scene *Scene) (*image.RGBA) 
 	return result
 }
 
-// Projects a ray into the screen from the given (x, y) coordinates.
-func computeRay(x, y int) Ray {
-	panic("Not yet implemented")
-}
-
 // Recursively traces a color from the given ray into the given scene configuration
-func rayTrace(ray Ray, depth int, scene *Scene) color.RGBA {
+func (scene *Scene) traceRay(ray Ray, depth int) color.RGBA {
+	minDistance := math.MaxFloat64 // the minimum distance between the ray and the intersected object
+
+	hitPoint := NewVector(0, 0, 0)
+	hitNormal := NewVector(0, 0, 0)
+
+	var intersectedObject *Object = nil
+
+	// for each of the objects within the scene
+	for _, object := range scene.Objects {
+		intersects, hit, normal := object.Intersects(ray)
+		if intersects {
+			// determine if this object is in-front of other objects
+			distance := ray.Origin.DistanceSqr(hit)
+			if distance < minDistance {
+				hitPoint = hit
+				hitNormal = normal
+				minDistance = distance
+				intersectedObject = object
+			}
+		}
+	}
+
+	if intersectedObject == nil {
+		return scene.BackgroundColor // no object; project background color
+	}
+
 	panic("Not yet implemented")
 }
