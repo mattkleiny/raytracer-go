@@ -56,7 +56,7 @@ func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
 		color := scene.traceRecursive(ray, 0, MaxDepth)
 
 		// push pixels out via channel
-		pixels <- Pixel{x, y, color}
+		pixels <- Pixel{x, y, ConvertToRGBA(color)}
 	}
 
 	// for every pixel in the resultant image
@@ -79,7 +79,7 @@ func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
 }
 
 // Recursively traces a ray from the given the scene and computes it's resultant color
-func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (color color.RGBA) {
+func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec4) {
 	// Determines the closest object to the ray origin and computes the TSect hit and normal
 	findClosestObject := func(ray Ray) (dist float64, object Object, hit, normal mgl64.Vec3) {
 		for _, o := range scene.Objects {
@@ -111,7 +111,7 @@ func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (color colo
 	// for each of the objects within the scene
 	_, object, hit, _ := findClosestObject(ray)
 	if object == nil {
-		return scene.BackgroundColor // no object; project background color
+		return nil
 	}
 
 	// inspect material properties
@@ -119,13 +119,13 @@ func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (color colo
 
 	// manage reflection/refraction up to a certain depth
 	if material.IsGlass && depth < maxDepth {
-		// compute reflection and refraction
+		// compute reflection and refraction colors
 		reflection := scene.traceRecursive(ray.Reflect(hit), depth+1, maxDepth)
 		refraction := scene.traceRecursive(ray.Refract(hit), depth+1, maxDepth)
 
 		Kr, Kt := fresnel(hit, ray.Direction)
 
-		// TODO: return computed colors
+		return reflection.Mul(Kr).Add(refraction.Mul(1 - Kt))
 	}
 
 	// TODO: compute diffuse illumination, accounting for light sources

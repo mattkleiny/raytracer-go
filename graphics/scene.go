@@ -3,6 +3,7 @@ package graphics
 import (
 	"image/color"
 	"github.com/go-gl/mathgl/mgl64"
+	"math"
 )
 
 // Represents a ray projected into 3d space
@@ -62,8 +63,9 @@ type Material struct {
 
 // Some commonly used materials
 var (
-	Green = Material{Diffuse: NewColor(0, 255, 0)}
-	Blue  = Material{Diffuse: NewColor(0, 0, 255)}
+	Origin = NewVec(0, 0, 0) // Origin in world-space
+	Green  = Material{Diffuse: NewColor(0, 255, 0)}
+	Blue   = Material{Diffuse: NewColor(0, 0, 255)}
 )
 
 // Creates a new vector with the given components
@@ -89,6 +91,29 @@ func NewCube(position mgl64.Vec3, size float64, material Material) *Cube {
 // Creates a new light at the given position with the given direction and brightness
 func NewLight(position, direction mgl64.Vec3, brightness float64) Light {
 	return Light{Position: position, Direction: direction, Brightness: brightness}
+}
+
+// Creates a new RGBA color with the given channel values
+func NewColor(r, g, b uint8) color.RGBA {
+	return color.RGBA{R: r, G: g, B: b, A: 255 }
+}
+
+// Creates a new RGBA color with the given channel values
+func ConvertToRGBA(vec mgl64.Vec4) color.RGBA {
+	// Clamps a floating point representation of an RGBA color into an RGBA struct
+	clamp := func(value float64) uint8 {
+		if value == 1.0 {
+			return 255
+		}
+		return uint8(math.Floor(value * 256.0))
+	}
+
+	return color.RGBA{
+		R: clamp(vec[0]),
+		G: clamp(vec[1]),
+		B: clamp(vec[2]),
+		A: clamp(vec[3]),
+	}
 }
 
 // Computes a reflected ray at the given hit point
@@ -119,9 +144,4 @@ func (sphere *Sphere) GetMaterial() *Material {
 // Retrieves the cube's material
 func (cube *Cube) GetMaterial() *Material {
 	return &cube.Material
-}
-
-// Creates a new RGBA color with the given channel values
-func NewColor(r, g, b uint8) color.RGBA {
-	return color.RGBA{R: r, G: g, B: b, A: 255 }
 }

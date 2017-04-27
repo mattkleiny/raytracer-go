@@ -15,11 +15,11 @@ func main() {
 			FieldOfView: 70.0, // 70°
 		},
 		Objects: []Object{
-			NewSphere(NewVec(0, 0, 0), 8, Green),
+			NewSphere(Origin, 8, Green),
 			NewCube(NewVec(-10, 0, 0), 8, Blue),
 		},
 		Lights: []Light{
-			NewLight(NewVec(-50, 50, -50), NewVec(0, 0, 0), 1.0),
+			NewLight(NewVec(-50, 50, -50), Origin, 1.0),
 		},
 		BackgroundColor: NewColor(255, 255, 255),
 	}
