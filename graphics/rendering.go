@@ -16,7 +16,7 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 	// concurrently compute color information for the given (x, y) coordinates
 	traceColorAt := func(x, y int, image *image.RGBA) {
 		// project a ray into the image and compute it's final color
-		ray := NewRay(scene.Camera, x, y)
+		ray := scene.Camera.ProjectRay(x, y)
 		color := scene.trace(ray, 0, 10)
 
 		image.Set(x, y, color) // TODO: determine if this is thread-safe

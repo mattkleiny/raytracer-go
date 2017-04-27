@@ -10,7 +10,9 @@ import (
 func main() {
 	// Create a simple scene with a few objects
 	scene := Scene{
-		Camera: NewVector(0, 50, -50),
+		Camera: Camera{
+			Position: NewVector(0, 50, -50),
+		},
 		Objects: []Object{
 			NewSphere(NewVector(0, 0, 0), 8, Green),
 			NewCube(NewVector(-10, 0, 0), 8, Blue),

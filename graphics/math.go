@@ -80,7 +80,12 @@ type Ray struct {
 	Direction Vector
 }
 
-// Projects a ray into the scene from the given (x, y) coordinates
-func NewRay(origin Vector, x, y int) Ray {
+// Projects a ray from the camera at the given (x, y) position.
+func (camera *Camera) ProjectRay(x, y int) Ray {
 	panic("Not yet implemented")
+}
+
+// String-ifies the ray
+func (r Ray) String() string {
+	return fmt.Sprintf("[%v] to [%v]", r.Origin, r.Direction)
 }

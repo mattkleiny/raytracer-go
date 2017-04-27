@@ -5,9 +5,14 @@ import "image/color"
 // Represents a scene configuration for the ray-tracer; provides objects and materials which compose
 // the scene structure and layout
 type Scene struct {
-	Camera          Vector     // The position of the camera within the scene
+	Camera          Camera     // The main scene camera
 	Objects         []Object   // The objects composing the scene itself (cubes, spheres, etc)
 	BackgroundColor color.RGBA // The background color of the scene
+}
+
+// Encapsulates a camera within the scene
+type Camera struct {
+	Position Vector // The position of the camera within the scene
 }
 
 // Represents a specific object within a scene
