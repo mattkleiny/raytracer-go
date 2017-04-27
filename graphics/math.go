@@ -7,6 +7,8 @@ import (
 
 const Epsilon float64 = 0.00001
 
+type Ray struct{ Vector }
+type Point struct{ Vector }
 type Vector struct{ X, Y, Z float64 }
 
 var (
