@@ -4,17 +4,28 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"sync"
 )
 
 // Concurrently traces an RGBA image of the given dimensions using the given scene configuration
 func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
+	var barrier sync.WaitGroup
+
 	result := image.NewRGBA(dimensions)
 
 	width := result.Rect.Dx()
 	height := result.Rect.Dy()
 
+	// Represents a pixel in 2d space; for use in our pixel channel
+	type Pixel struct {
+		X, Y  int
+		Color color.RGBA
+	}
+
+	pixels := make(chan Pixel)
+
 	// concurrently compute color information for the given (x, y) coordinates
-	traceColorAt := func(x, y int, image *image.RGBA) {
+	traceColorAt := func(x, y int, pixels chan Pixel, barrier sync.WaitGroup) {
 		// projects a ray into the scene at the given (x, y) image coordinates
 		projectRay := func(x, y int) Ray {
 			fov := scene.Camera.FieldOfView
@@ -40,19 +51,30 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 			return NewRay(origin, direction)
 		}
 
+		defer barrier.Done() // signal this pixel is completed
+
 		// project a ray into the image and compute it's final color
 		ray := projectRay(x, y)
 		color := scene.trace(ray, 0, 10)
 
-		image.Set(x, y, color) // TODO: determine if this is thread-safe
+		// push pixels out via channel
+		pixels <- Pixel{x, y, color}
 	}
 
 	// for every pixel in the resultant image
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 			// concurrently compute it's color information
-			go traceColorAt(x, y, result)
+			barrier.Add(1)
+			go traceColorAt(x, y, pixels, barrier)
 		}
+	}
+
+	barrier.Wait() // wait until all pixels are computed
+
+	// compose all pixels into the resultant image
+	for pixel := range pixels {
+		result.Set(pixel.X, pixel.Y, pixel.Color)
 	}
 
 	return result
@@ -85,14 +107,11 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (color color.RGBA) {
 	}
 
 	// for each of the objects within the scene
-	distance, object, hit, normal := findClosestObject(ray)
+	_, object, _, _ := findClosestObject(ray)
 
 	if object == nil {
 		return scene.BackgroundColor // no object; project background color
 	}
-
-	// account for slope against camera in field of view
-	slope := ray.Direction.Add(NewVector(0, 1, 0)).Multiply(0.5)
 
 	panic("Not yet implemented")
 }

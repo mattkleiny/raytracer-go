@@ -56,13 +56,13 @@ var (
 )
 
 // Creates a new sphere at the given position with the given radius and material
-func NewSphere(position Vector, radius float64, material Material) Object {
-	return Sphere{Position: position, Radius: radius, Material: material}
+func NewSphere(position Vector, radius float64, material Material) *Sphere {
+	return &Sphere{Position: position, Radius: radius, Material: material}
 }
 
 // Creates a new cube at the given position with the given cubed-size and material
-func NewCube(position Vector, size float64, material Material) Object {
-	return Cube{Position: position, Size: size, Material: material}
+func NewCube(position Vector, size float64, material Material) *Cube {
+	return &Cube{Position: position, Size: size, Material: material}
 }
 
 // Calculates whether the sphere intersects with the given ray, and computes the hit and normal
