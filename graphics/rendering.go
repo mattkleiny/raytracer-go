@@ -10,7 +10,7 @@ import (
 
 // Concurrently traces an RGBA image of the given dimensions using the given scene configuration
 func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
-	const MaxDepth = 10        // The maximum depth for trace recursion
+	const MaxDepth = 3         // The maximum depth for trace recursion
 	var barrier sync.WaitGroup // A barrier for coordinating on completed pixels
 
 	result := image.NewRGBA(dimensions)
@@ -84,8 +84,8 @@ func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec3
 	findClosestObject := func(ray Ray) (dist float64, object Object, hit, normal mgl64.Vec3) {
 		for _, o := range scene.Objects {
 			// determine if the ray projected from the camera intersected with the object
-			i, h, n := o.Intersects(ray)
-			if i {
+			intersects, h, n := o.Intersects(ray)
+			if intersects {
 				// if it did, determine if it was the closest object that we intersected with
 				Δ := hit.Sub(ray.Origin).Len()
 
@@ -111,12 +111,11 @@ func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec3
 	// for each of the objects within the scene
 	_, object, hit, normal := findClosestObject(ray)
 	if object == nil {
-		return nil
+		return scene.Color
 	}
 
 	// inspect material properties
 	material := object.GetMaterial()
-	light := scene.Light
 
 	// manage reflection/refraction up to a certain depth
 	if material.IsGlass && depth < maxDepth {
@@ -130,11 +129,13 @@ func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec3
 	}
 
 	// compute diffuse illumination, accounting for light sources and shadows
+	light := scene.Light
 	shadowRay := NewRay(hit, hit.Sub(light.Position))
 
 	for _, object := range scene.Objects {
-		if object.Intersects(shadowRay) {
-			return nil // object is in shadow, so no light is provided
+		intersects, _, _ := object.Intersects(shadowRay)
+		if intersects {
+			return scene.Color // object is in shadow, so no light is provided
 		}
 	}
 

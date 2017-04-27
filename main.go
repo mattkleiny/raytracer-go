@@ -19,7 +19,7 @@ func main() {
 			NewCube(NewVec(-10, 0, 0), 8, Blue),
 		},
 		Light: NewLight(NewVec(-50, 50, -50), Origin, 1.0),
-		Color: NewColor(255, 255, 255),
+		Color: NewVec(1.0, 1.0, 1.0),
 	}
 
 	// Trace the scene into an image so it can be rendered to file

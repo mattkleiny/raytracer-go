@@ -18,7 +18,7 @@ type Scene struct {
 	Camera  Camera     // The main scene camera
 	Objects []Object   // The objects composing the scene itself (cubes, spheres, etc)
 	Light   Light      // The global world light
-	Color   color.RGBA // The background color of the scene
+	Color   mgl64.Vec3 // The background color of the scene
 }
 
 // Represents a camera within the world
@@ -91,11 +91,6 @@ func NewCube(position mgl64.Vec3, size float64, material Material) *Cube {
 // Creates a new light at the given position with the given direction and brightness
 func NewLight(position, direction mgl64.Vec3, brightness float64) Light {
 	return Light{Position: position, Direction: direction, Brightness: brightness}
-}
-
-// Creates a new RGBA color with the given channel values
-func NewColor(r, g, b uint8) color.RGBA {
-	return color.RGBA{R: r, G: g, B: b, A: 255 }
 }
 
 // Creates a new RGBA color with the given channel values
