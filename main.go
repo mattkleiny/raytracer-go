@@ -19,7 +19,7 @@ func main() {
 	}
 
 	// Trace the scene into an image so it can be rendered to file
-	image := scene.TraceToImage(image.Rect(0, 0, 800, 600))
+	image := scene.TraceImage(image.Rect(0, 0, 800, 600))
 
 	// and render the image to file
 	encodeToJpg(image, "output.jpg")
