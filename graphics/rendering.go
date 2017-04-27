@@ -46,9 +46,9 @@ func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
 			pY := 1 - 2*((fy+0.5)/fheight)*math.Tan(fov/2*math.Pi/180)
 
 			origin := scene.Camera.Position
-			direction := NewVec(pX, pY, -1).Sub(origin).Normalize()
+			direction := V(pX, pY, -1).Sub(origin).Normalize()
 
-			return NewRay(origin, direction)
+			return Ray{origin, direction}
 		}
 
 		// project a ray into the image and compute it's final color
@@ -130,7 +130,7 @@ func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec3
 
 	// compute diffuse illumination, accounting for light sources and shadows
 	light := scene.Light
-	shadowRay := NewRay(hit, hit.Sub(light.Position))
+	shadowRay := Ray{hit, hit.Sub(light.Position)}
 
 	for _, object := range scene.Objects {
 		intersects, _, _ := object.Intersects(shadowRay)

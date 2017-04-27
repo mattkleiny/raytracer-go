@@ -11,15 +11,33 @@ func main() {
 	// Create a simple scene with a few objects
 	scene := Scene{
 		Camera: Camera{
-			Position:    NewVec(0, 50, -50),
-			FieldOfView: 70.0, // 70°
+			Position:    V(0, 50, -50),
+			FieldOfView: 75.0, // 75°
 		},
 		Objects: []Object{
-			NewSphere(Origin, 8, Green),
-			NewCube(NewVec(-10, 0, 0), 8, Blue),
+			Sphere{
+				Position: V(0, 0, 0),
+				Radius:   8.0,
+				Material: Material{
+					Diffuse: V(0, 1, 0),
+					IsGlass: true,
+				},
+			},
+			Cube{
+				Position: V(-10, 0, 0),
+				Size:     8.0,
+				Material: Material{
+					Diffuse: V(0, 0, 1),
+					IsGlass: false,
+				},
+			},
 		},
-		Light: NewLight(NewVec(-50, 50, -50), Origin, 1.0),
-		Color: NewVec(1.0, 1.0, 1.0),
+		Light: Light{
+			Position:   V(-50, 50, -50),
+			Direction:  V(0, 0, 0),
+			Brightness: 1.0,
+		},
+		Color: V(1.0, 1.0, 1.0),
 	}
 
 	// Trace the scene into an image so it can be rendered to file

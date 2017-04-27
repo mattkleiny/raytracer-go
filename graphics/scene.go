@@ -61,36 +61,9 @@ type Material struct {
 	IsGlass bool       // If the material is glass, it possesses unique reflection properties
 }
 
-// Some commonly used materials
-var (
-	Origin = NewVec(0, 0, 0) // Origin in world-space
-	Green  = Material{Diffuse: NewVec(0, 1.0, 0)}
-	Blue   = Material{Diffuse: NewVec(0, 0, 1.0)}
-)
-
 // Creates a new vector with the given components
-func NewVec(x, y, z float64) mgl64.Vec3 {
+func V(x, y, z float64) mgl64.Vec3 {
 	return mgl64.Vec3{x, y, z}
-}
-
-// Creates a new ray with the given components
-func NewRay(origin, direction mgl64.Vec3) Ray {
-	return Ray{Origin: origin, Direction: direction}
-}
-
-// Creates a new sphere at the given position with +the given radius and material
-func NewSphere(position mgl64.Vec3, radius float64, material Material) *Sphere {
-	return &Sphere{Position: position, Radius: radius, Material: material}
-}
-
-// Creates a new cube at the given position with the given cubed-size and material
-func NewCube(position mgl64.Vec3, size float64, material Material) *Cube {
-	return &Cube{Position: position, Size: size, Material: material}
-}
-
-// Creates a new light at the given position with the given direction and brightness
-func NewLight(position, direction mgl64.Vec3, brightness float64) Light {
-	return Light{Position: position, Direction: direction, Brightness: brightness}
 }
 
 // Creates a new RGBA color with the given channel values
