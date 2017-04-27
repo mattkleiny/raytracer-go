@@ -80,9 +80,9 @@ type Ray struct {
 	Direction Vector
 }
 
-// Projects a ray from the camera at the given (x, y) position.
-func (camera *Camera) ProjectRay(x, y int) Ray {
-	panic("Not yet implemented")
+// Creates a new ray with the given components
+func NewRay(origin, direction Vector) Ray {
+	return Ray{origin, direction}
 }
 
 // String-ifies the ray

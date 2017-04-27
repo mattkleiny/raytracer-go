@@ -7,12 +7,20 @@ import "image/color"
 type Scene struct {
 	Camera          Camera     // The main scene camera
 	Objects         []Object   // The objects composing the scene itself (cubes, spheres, etc)
+	Lights          []Light    // The lights within the world
 	BackgroundColor color.RGBA // The background color of the scene
 }
 
-// Encapsulates a camera within the scene
+// Represents a camera within the world
 type Camera struct {
-	Position Vector // The position of the camera within the scene
+	Position    Vector  // The position of the camera
+	FieldOfView float64 // The field of view, in degrees
+}
+
+// Represents a light in the world
+type Light struct {
+	Direction Ray        // The direction of the light, as a ray
+	Color     color.RGBA // The color of the light
 }
 
 // Represents a specific object within a scene

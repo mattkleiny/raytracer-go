@@ -11,11 +11,15 @@ func main() {
 	// Create a simple scene with a few objects
 	scene := Scene{
 		Camera: Camera{
-			Position: NewVector(0, 50, -50),
+			Position:    NewVector(0, 50, -50),
+			FieldOfView: 70.0, // 70°
 		},
 		Objects: []Object{
 			NewSphere(NewVector(0, 0, 0), 8, Green),
 			NewCube(NewVector(-10, 0, 0), 8, Blue),
+		},
+		Lights: []Light{
+			// TODO: add some lights
 		},
 		BackgroundColor: NewColor(255, 255, 255),
 	}
