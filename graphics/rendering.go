@@ -41,36 +41,35 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 
 // Recursively traces a color from the given ray into the given scene configuration
 func (scene *Scene) trace(ray Ray, depth int) color.RGBA {
+	// Determines the closest object to the ray origin and computes the TSect hit and normal of
+	computeClosestObject := func(ray Ray) (distance float64, object Object, hit, normal Vector) {
+		for _, o := range scene.Objects {
+			// determine if the ray projected from the camera intersected with the object
+			i, h, n := o.Intersects(ray)
+
+			if i {
+				// if it did, determine if it was the closest object that we intersected with
+				Δ := ray.Origin.DistanceSqr(hit)
+
+				if distance < Δ {
+					// if it is, retain the hit point and normal information
+					distance = Δ
+
+					hit = h
+					normal = n
+					object = o
+				}
+			}
+		}
+		return
+	}
+
 	// for each of the objects within the scene
-	distance, object, hit, normal := scene.calculateClosestObject(ray)
+	distance, object, hit, normal := computeClosestObject(ray)
 
 	if object == nil {
 		return scene.BackgroundColor // no object; project background color
 	}
 
 	panic("Not yet implemented")
-}
-
-// Calculates the closest object to the ray and it's hit and normal coordinates
-func (scene *Scene) calculateClosestObject(ray Ray) (distance float64, object Object, hit, normal Vector) {
-	for _, o := range scene.Objects {
-		// determine if the ray projected from the camera intersected with the object
-		intersects, h, n := o.Intersects(ray)
-
-		if intersects {
-			// if it did, determine if it was the closest object that we intersected with
-			Δ := ray.Origin.DistanceSqr(hit)
-
-			if distance < Δ {
-				// if it is, retain the hit point and normal information
-				distance = Δ
-
-				hit = h
-				normal = n
-				object = o
-			}
-		}
-	}
-
-	return
 }
