@@ -1,8 +1,8 @@
 package graphics
 
 import (
-	"image/color"
 	"image"
+	"image/color"
 )
 
 // Concurrently traces an RGBA image of the given dimensions using the given scene configuration
@@ -14,25 +14,24 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 	}
 
 	// concurrently compute color information for the given (x, y) coordinates
-	computeStep := func(x, y int, image *image.RGBA) {
-		// project a ray into the image and compute it's final color;
-		// capture it's input point as well so we can compose in parallel
-		ray := ProjectRay(scene.Camera, x, y)
-		color := scene.trace(ray, 0)
+	traceColorAt := func(x, y int, image *image.RGBA) {
+		// project a ray into the image and compute it's final color
+		ray := NewRay(scene.Camera, x, y)
+		color := scene.trace(ray, 0, 10)
 
 		image.Set(x, y, color) // TODO: determine if this is thread-safe
 	}
 
 	result := image.NewRGBA(dimensions)
 
-	width := result.Rect.Size().X
-	height := result.Rect.Size().Y
+	width := result.Rect.Dx()
+	height := result.Rect.Dy()
 
 	// for every pixel in the resultant image
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 			// concurrently compute it's color information
-			go computeStep(x, y, result)
+			go traceColorAt(x, y, result)
 		}
 	}
 
@@ -40,9 +39,10 @@ func (scene *Scene) TraceImage(dimensions image.Rectangle) (*image.RGBA) {
 }
 
 // Recursively traces a color from the given ray into the given scene configuration
-func (scene *Scene) trace(ray Ray, depth int) color.RGBA {
-	// Determines the closest object to the ray origin and computes the TSect hit and normal of
-	computeClosestObject := func(ray Ray) (distance float64, object Object, hit, normal Vector) {
+func (scene *Scene) trace(ray Ray, depth int, maxDepth int) color.RGBA {
+	// Determines the closest object to the ray origin and computes the TSect hit and normal
+	findClosestObject := func(ray Ray) (distance float64, object Object, hit, normal Vector) {
+		// TODO: see if you can clean this up
 		for _, o := range scene.Objects {
 			// determine if the ray projected from the camera intersected with the object
 			i, h, n := o.Intersects(ray)
@@ -65,7 +65,7 @@ func (scene *Scene) trace(ray Ray, depth int) color.RGBA {
 	}
 
 	// for each of the objects within the scene
-	distance, object, hit, normal := computeClosestObject(ray)
+	distance, object, hit, normal := findClosestObject(ray)
 
 	if object == nil {
 		return scene.BackgroundColor // no object; project background color

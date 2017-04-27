@@ -81,6 +81,6 @@ type Ray struct {
 }
 
 // Projects a ray into the scene from the given (x, y) coordinates
-func ProjectRay(origin Vector, x, y int) Ray {
+func NewRay(origin Vector, x, y int) Ray {
 	panic("Not yet implemented")
 }
