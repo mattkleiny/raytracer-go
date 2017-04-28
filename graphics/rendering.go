@@ -6,8 +6,8 @@ import (
 	"image/color"
 )
 
-const MaxDepth = 3     // The maximum depth for trace recursion
-const LightBias = 1e-4 // suitable small directional bias for lighting calculations
+const MaxDepth = 3 // The maximum depth for trace recursion
+const Bias = 1e-4  // suitable small directional bias for lighting calculations
 
 // Ray-traces an RGBA image of the given dimensions using the given scene configuration
 func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
@@ -93,46 +93,35 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 
 	// compute reflection/refraction illumination up to a certain depth
 	if (material.Transparency > 0 || material.Reflectivity > 0) && depth < maxDepth {
-		// computes the fresnel lens effect for reflective/transparent surfaces;
+		// computes the fresnel lens effect for reflective/transparent surfaces
 		// see https://en.wikipedia.org/wiki/Fresnel_lens
-		mix := func(a, b, mix float64) float64 {
-			return b*mix + a*(1-mix)
+		computeFresnel := func(direction, normal Vector) float64 {
+			mix := func(a, b, mix float64) float64 {
+				return b*mix + a*(1-mix)
+			}
+
+			return mix(math.Pow(1+direction.Dot(normal), 3), 1, 0.1)
 		}
 
+		// determine whether we're inside or outside the surface
 		inside := false
 		if ray.Direction.Dot(normal) > 0 {
-			normal = normal.MulS(-1)
+			normal = normal.Negate()
 			inside = true
 		}
 
-		facingRatio := -ray.Direction.Dot(normal)
-		fresnel := mix(math.Pow(1-facingRatio, 3), 1, 0.1)
+		fresnel := computeFresnel(ray.Direction, normal)
 
-		// compute reflective color
-		reflectionDir := ray.Direction.Sub(normal.MulS(2).MulS(ray.Direction.Dot(normal)))
-		reflectionRay := R(hit.Add(normal.MulS(LightBias)), reflectionDir)
-		reflectionColor := scene.trace(reflectionRay, depth+1, maxDepth)
-
-		// compute refractive color
+		// compute reflective and refractive color by recursively tracing light along reflective and
+		// refractive angles; the combine the resultant colours
+		reflectionColor := scene.trace(ray.Reflect(hit, normal), depth+1, maxDepth)
 		refractionColor := V(0, 0, 0)
-		if material.Transparency > 0 {
-			ior := 1.1
-			eta := ior
-			if !inside {
-				eta = 1 / ior
-			}
-			cosi := -normal.Dot(ray.Direction)
-			k := 1 - eta*eta*(1-cosi*cosi)
 
-			refractionDir := ray.Direction.MulS(eta).Add(normal.MulS(eta*cosi - math.Sqrt(k)))
-			refractionRay := R(hit.Sub(normal.MulS(LightBias)), refractionDir)
-			refractionColor = scene.trace(refractionRay, depth+1, maxDepth)
+		if material.Transparency > 0 {
+			refractionColor = scene.trace(ray.Refract(hit, normal, inside), depth+1, maxDepth)
 		}
 
-		reflectiveColor := reflectionColor.MulS(fresnel)
-		refractiveColor := refractionColor.MulS(1 - fresnel).MulS(material.Transparency)
-
-		sampledColor = (reflectiveColor.Add(refractiveColor)).Mul(material.Diffuse)
+		sampledColor = reflectionColor.MulS(fresnel).Add(refractionColor.MulS(1 - fresnel).MulS(material.Transparency)).Mul(material.Diffuse)
 	} else {
 		// compute diffuse illumination, accounting for light sources and shadows
 		for _, light := range scene.Lights {
@@ -140,7 +129,7 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 			// the light position; we then determine whether another object occludes the light source and
 			// project a shadow if it does
 			transmission := V(1, 1, 1)
-			lightRay := R(hit.Add(normal.MulS(LightBias)), light.Position.Sub(hit))
+			lightRay := R(hit.Add(normal.MulS(Bias)), light.Position.Sub(hit))
 
 			for _, other := range scene.Objects {
 				distance := math.MaxFloat64
@@ -151,6 +140,7 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 				}
 			}
 
+			// compute shaded color
 			sampledColor = sampledColor.Add(material.Diffuse).Mul(transmission).MulS(math.Max(0, normal.Dot(lightRay.Direction))).Mul(light.Emission)
 		}
 	}
