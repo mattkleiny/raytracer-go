@@ -67,19 +67,19 @@ func (a Vector) Mod(b Vector) Vector {
 	return V(x, y, z)
 }
 
-func (a Vector) AddScalar(b float64) Vector {
+func (a Vector) AddS(b float64) Vector {
 	return V(a.X+b, a.Y+b, a.Z+b)
 }
 
-func (a Vector) SubScalar(b float64) Vector {
+func (a Vector) SubS(b float64) Vector {
 	return V(a.X-b, a.Y-b, a.Z-b)
 }
 
-func (a Vector) MulScalar(b float64) Vector {
+func (a Vector) MulS(b float64) Vector {
 	return V(a.X*b, a.Y*b, a.Z*b)
 }
 
-func (a Vector) DivScalar(b float64) Vector {
+func (a Vector) DivS(b float64) Vector {
 	return V(a.X/b, a.Y/b, a.Z/b)
 }
 
@@ -94,5 +94,5 @@ func R(origin, direction Vector) Ray {
 }
 
 func (r Ray) Position(t float64) Vector {
-	return r.Origin.Add(r.Direction.MulScalar(t))
+	return r.Origin.Add(r.Direction.MulS(t))
 }

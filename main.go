@@ -28,9 +28,7 @@ func main() {
 				Center: V(5.0, -1, -15),
 				Radius: 2,
 				Material: Material{
-					Diffuse:      V(0, 1, 0),
-					Reflectivity: 0.0,
-					Transparency: 0.0,
+					Diffuse:      V(0, 0, 1),
 				},
 			},
 			&Sphere{
@@ -38,23 +36,19 @@ func main() {
 				Radius: 1.5,
 				Material: Material{
 					Diffuse:      V(0, 1, 0),
-					Reflectivity: 0.0,
-					Transparency: 0.0,
 				},
 			},
 			&Sphere{
 				Center: V(-5.5, 0, -15),
 				Radius: 3,
 				Material: Material{
-					Diffuse:      V(0, 1, 0),
-					Reflectivity: 0.0,
-					Transparency: 0.0,
+					Diffuse:      V(1, 0, 0),
 				},
 			},
 		},
 		Lights: []Light{
 			{
-				Position: V(0, 50, 0),
+				Position: V(-20, 30, 20),
 				Emission: V(1.0, 1.0, 1.0),
 			},
 		},

@@ -76,6 +76,7 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 		if result != nil {
 			// calculate hit and normal vectors
 			hit = ray.Origin.Add(ray.Position(nearest))
+			normal = hit.Sub(result.GetPosition()).Normalize()
 		}
 
 		return
@@ -86,7 +87,9 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 	if object == nil {
 		return scene.BackgroundColor
 	}
+
 	material := object.GetMaterial()
+	sampledColor := V(0, 0, 0) // the resultant color
 
 	// compute reflection/refraction up to a certain depth
 	if material.Transparency > 0 || material.Reflectivity > 0 && depth < maxDepth {
@@ -98,18 +101,22 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 		// project a ray from the hit point, accounting for a small bias in direction, toward
 		// the light position; we then determine whether another object occludes the light source and
 		// project a shadow if it does
-		lightRay := R(hit.Add(normal.MulScalar(LightBias)), light.Position.Sub(hit))
+		transmission := V(1, 1, 1)
+		lightRay := R(hit.Add(normal.MulS(LightBias)), light.Position.Sub(hit))
 
 		for _, other := range scene.Objects {
 			distance := math.MaxFloat64
 
 			if other.Intersects(lightRay, &distance) {
-				return V(0, 0, 0) // covered in shadow
+				transmission = V(0, 0, 0)
+				break
 			}
 		}
+
+		sampledColor = sampledColor.Add(material.Diffuse).Mul(transmission).MulS(math.Max(0, normal.Dot(lightRay.Direction))).Mul(light.Emission)
 	}
 
-	return material.Diffuse
+	return sampledColor
 }
 
 // Converts a vector 3 in floating point range (0.0 to 1.0) to a color with the given channel values
