@@ -1,104 +1,93 @@
 package graphics
 
 import (
-	"image"
-	"image/color"
 	"math"
-	"sync"
+	"image"
 	"github.com/go-gl/mathgl/mgl64"
 )
 
-// Concurrently traces an RGBA image of the given dimensions using the given scene configuration
+// Ray-traces an RGBA image of the given dimensions using the given scene configuration
 func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
-	const MaxDepth = 3         // The maximum depth for trace recursion
-	var barrier sync.WaitGroup // A barrier for coordinating on completed pixels
+	const MaxDepth = 3 // The maximum depth for trace recursion
 
 	result := image.NewRGBA(dimensions)
 
 	width := result.Rect.Dx()
 	height := result.Rect.Dy()
 
-	// Represents a pixel in 2d space; for use in our pixel channel
-	type Pixel struct {
-		X, Y  int
-		Color color.RGBA
-	}
+	// compute aspect ratio of the image
+	fwidth := float64(width)
+	fheight := float64(height)
+	aspectRatio := fwidth / fheight
 
-	pixels := make(chan Pixel)
+	// pre-compute field of view and camera angle
+	fov := scene.Camera.FieldOfView
+	angle := math.Tan(fov / 2 * math.Pi / 180)
 
-	// concurrently compute color information for the given (x, y) coordinates
-	traceColorAt := func(x, y int, pixels chan Pixel, barrier sync.WaitGroup) {
+	// compute color information for the given (x, y) coordinates
+	traceColorAt := func(x, y int, image *image.RGBA) {
 		// projects a ray into the scene at the given (x, y) image coordinates
 		projectRay := func(x, y int) Ray {
-			fov := scene.Camera.FieldOfView
-
 			// manually cast to floating point; because go-lang
 			fx := float64(x)
 			fy := float64(y)
 
-			fwidth := float64(width)
-			fheight := float64(height)
-
-			aspectRatio := fwidth / fheight
-
 			// compute pixel camera (x, y) coordinates
-			pX := (2*((fx+0.5)/fwidth) - 1) * math.Tan(fov/2*math.Pi/180) * aspectRatio
-			pY := 1 - 2*((fy+0.5)/fheight)*math.Tan(fov/2*math.Pi/180)
+			pX := (2*((fx+0.5)/fwidth) - 1) * angle * aspectRatio
+			pY := 1 - 2*((fy+0.5)/fheight)*angle
 
-			origin := scene.Camera.Position
-			direction := V(pX, pY, -1).Sub(origin).Normalize()
+			origin := V(0, 0, 0)
+			direction := V(pX, pY, -1).Normalize()
 
 			return Ray{origin, direction}
 		}
 
-		// project a ray into the image and compute it's final color
+		// project a ray into the scene and compute it's final color
 		ray := projectRay(x, y)
-		color := scene.traceRecursive(ray, 0, MaxDepth)
+		color := scene.trace(ray, 0, MaxDepth)
 
-		// push pixels out via channel
-		pixels <- Pixel{x, y, ConvertToRGBA(color)}
+		image.Set(x, y, ConvertToRGBA(color))
 	}
 
 	// for every pixel in the resultant image
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
-			// concurrently compute it's color information
-			barrier.Add(1)
-			go traceColorAt(x, y, pixels, barrier)
+			// compute it's color information
+			traceColorAt(x, y, result)
 		}
-	}
-
-	barrier.Wait() // wait until all pixels are computed
-
-	// compose all pixels into the resultant image
-	for pixel := range pixels {
-		result.Set(pixel.X, pixel.Y, pixel.Color)
 	}
 
 	return result
 }
 
 // Recursively traces a ray from the given the scene and computes it's resultant color
-func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec3) {
-	// Determines the closest object to the ray origin and computes the TSect hit and normal
-	findClosestObject := func(ray Ray) (dist float64, object Object, hit, normal mgl64.Vec3) {
-		for _, o := range scene.Objects {
+func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (mgl64.Vec3) {
+	// determines the closest sphere to the ray origin and computes the intersect hit and normal
+	findIntersectingSphere := func(ray Ray) (result *Sphere, hit, normal mgl64.Vec3) {
+		tnear := math.MaxFloat64 // the nearest intersection
+
+		for _, sphere := range scene.Spheres {
+			t0, t1 := math.MaxFloat64, math.MaxFloat64
+
 			// determine if the ray projected from the camera intersected with the object
-			intersects, h, n := o.Intersects(ray)
-			if intersects {
-				// if it did, determine if it was the closest object that we intersected with
-				Δ := hit.Sub(ray.Origin).Len()
+			if sphere.Intersects(ray, &t0, &t1) {
+				if t0 < 0 {
+					t0 = t1
+				}
 
-				if dist < Δ {
-					// if it is, retain the hit point and normal information
-					dist = Δ
-
-					hit = h
-					normal = n
-					object = o
+				if t0 < tnear {
+					tnear = t0
+					result = &sphere
 				}
 			}
 		}
+
+		if result != nil {
+			// calculate hit and normal vectors
+			hit = ray.Origin.Add(ray.Direction.Mul(tnear))
+			normal = hit.Sub(result.Center).Normalize()
+		}
+
 		return
 	}
 
@@ -108,20 +97,19 @@ func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec3
 		panic("Not yet implemented")
 	}
 
-	// for each of the objects within the scene
-	_, object, hit, normal := findClosestObject(ray)
-	if object == nil {
-		return scene.Color
+	// find the first intersecting object within the scene
+	sphere, hit, normal := findIntersectingSphere(ray)
+	if sphere == nil {
+		return scene.BackgroundColor
 	}
 
-	// inspect material properties
-	material := object.GetMaterial()
+	material := sphere.Material
 
-	// manage reflection/refraction up to a certain depth
-	if material.IsGlass && depth < maxDepth {
+	// compute reflection/refraction up to a certain depth
+	if material.Transparency > 0 || material.Reflectivity > 0 && depth < maxDepth {
 		// compute reflection and refraction colors
-		reflection := scene.traceRecursive(ray.Reflect(normal), depth+1, maxDepth)
-		refraction := scene.traceRecursive(ray.Refract(normal), depth+1, maxDepth)
+		reflection := scene.trace(ray.Reflect(normal), depth+1, maxDepth)
+		refraction := scene.trace(ray.Refract(normal), depth+1, maxDepth)
 
 		Kr, Kt := fresnel(normal, ray.Direction)
 
@@ -129,15 +117,20 @@ func (scene *Scene) traceRecursive(ray Ray, depth int, maxDepth int) (mgl64.Vec3
 	}
 
 	// compute diffuse illumination, accounting for light sources and shadows
-	light := scene.Light
-	shadowRay := Ray{hit, hit.Sub(light.Position)}
+	for _, light := range scene.Lights {
+		// project a ray from the hit point, accounting for a small bias in direction, toward
+		// the light position; we then determine whether another sphere occludes the light source and
+		// project a shadow if it does
+		const Bias = 1e-4 // suitable small directional bias
+		lightRay := Ray{hit.Add(normal.Mul(Bias)), light.Position.Sub(hit).Normalize()}
 
-	for _, object := range scene.Objects {
-		intersects, _, _ := object.Intersects(shadowRay)
-		if intersects {
-			return scene.Color // object is in shadow, so no light is provided
+		for _, other := range scene.Spheres {
+			t0, t1 := math.MaxFloat64, math.MaxFloat64
+			if other.Intersects(lightRay, &t0, &t1) {
+				return V(0, 0, 0) // covered in shadow
+			}
 		}
 	}
 
-	return material.Diffuse.Mul(light.Brightness)
+	return material.Diffuse
 }
