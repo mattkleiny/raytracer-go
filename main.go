@@ -29,13 +29,17 @@ func main() {
 				Radius: 2,
 				Material: Material{
 					Diffuse:      V(0, 0, 1),
+					Reflectivity: 1.0,
+					Transparency: 0.5,
 				},
 			},
 			&Sphere{
 				Center: V(3.0, 0, -35),
-				Radius: 1.5,
+				Radius: 2,
 				Material: Material{
 					Diffuse:      V(0, 1, 0),
+					Reflectivity: 1.0,
+					Transparency: 0.5,
 				},
 			},
 			&Sphere{
@@ -43,6 +47,8 @@ func main() {
 				Radius: 3,
 				Material: Material{
 					Diffuse:      V(1, 0, 0),
+					Reflectivity: 1.0,
+					Transparency: 0.5,
 				},
 			},
 		},

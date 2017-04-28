@@ -7,7 +7,7 @@ import (
 )
 
 const MaxDepth = 3     // The maximum depth for trace recursion
-const LightBias = 1e-4 // suitable small directional bias for light calculations
+const LightBias = 1e-4 // suitable small directional bias for lighting calculations
 
 // Ray-traces an RGBA image of the given dimensions using the given scene configuration
 func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
@@ -57,7 +57,7 @@ func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
 
 // Recursively traces a ray from the given the scene and computes it's resultant color
 func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
-	// determines the closest object to the ray origin and computes the intersect hit and normal
+	// determines the closest object to the ray origin and computes the intersect hit and a
 	findIntersectingObject := func(ray Ray) (result Object, hit, normal Vector) {
 		nearest := math.MaxFloat64 // the nearest intersection
 
@@ -74,7 +74,7 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 		}
 
 		if result != nil {
-			// calculate hit and normal vectors
+			// calculate hit and a vectors
 			hit = ray.Origin.Add(ray.Position(nearest))
 			normal = hit.Sub(result.GetPosition()).Normalize()
 		}
@@ -91,29 +91,68 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 	material := object.GetMaterial()
 	sampledColor := V(0, 0, 0) // the resultant color
 
-	// compute reflection/refraction up to a certain depth
-	if material.Transparency > 0 || material.Reflectivity > 0 && depth < maxDepth {
-		panic("Not yet implemented")
-	}
-
-	// compute diffuse illumination, accounting for light sources and shadows
-	for _, light := range scene.Lights {
-		// project a ray from the hit point, accounting for a small bias in direction, toward
-		// the light position; we then determine whether another object occludes the light source and
-		// project a shadow if it does
-		transmission := V(1, 1, 1)
-		lightRay := R(hit.Add(normal.MulS(LightBias)), light.Position.Sub(hit))
-
-		for _, other := range scene.Objects {
-			distance := math.MaxFloat64
-
-			if other.Intersects(lightRay, &distance) {
-				transmission = V(0, 0, 0)
-				break
-			}
+	// compute reflection/refraction illumination up to a certain depth
+	if (material.Transparency > 0 || material.Reflectivity > 0) && depth < maxDepth {
+		// computes the fresnel lens effect for reflective/transparent surfaces;
+		// see https://en.wikipedia.org/wiki/Fresnel_lens
+		mix := func(a, b, mix float64) float64 {
+			return b*mix + a*(1-mix)
 		}
 
-		sampledColor = sampledColor.Add(material.Diffuse).Mul(transmission).MulS(math.Max(0, normal.Dot(lightRay.Direction))).Mul(light.Emission)
+		inside := false
+		if ray.Direction.Dot(normal) > 0 {
+			normal = normal.MulS(-1)
+			inside = true
+		}
+
+		facingRatio := -ray.Direction.Dot(normal)
+		fresnel := mix(math.Pow(1-facingRatio, 3), 1, 0.1)
+
+		// compute reflective color
+		reflectionDir := ray.Direction.Sub(normal.MulS(2).MulS(ray.Direction.Dot(normal)))
+		reflectionRay := R(hit.Add(normal.MulS(LightBias)), reflectionDir)
+		reflectionColor := scene.trace(reflectionRay, depth+1, maxDepth)
+
+		// compute refractive color
+		refractionColor := V(0, 0, 0)
+		if material.Transparency > 0 {
+			ior := 1.1
+			eta := ior
+			if !inside {
+				eta = 1 / ior
+			}
+			cosi := -normal.Dot(ray.Direction)
+			k := 1 - eta*eta*(1-cosi*cosi)
+
+			refractionDir := ray.Direction.MulS(eta).Add(normal.MulS(eta*cosi - math.Sqrt(k)))
+			refractionRay := R(hit.Sub(normal.MulS(LightBias)), refractionDir)
+			refractionColor = scene.trace(refractionRay, depth+1, maxDepth)
+		}
+
+		reflectiveColor := reflectionColor.MulS(fresnel)
+		refractiveColor := refractionColor.MulS(1 - fresnel).MulS(material.Transparency)
+
+		sampledColor = (reflectiveColor.Add(refractiveColor)).Mul(material.Diffuse)
+	} else {
+		// compute diffuse illumination, accounting for light sources and shadows
+		for _, light := range scene.Lights {
+			// project a ray from the hit point, accounting for a small bias in direction, toward
+			// the light position; we then determine whether another object occludes the light source and
+			// project a shadow if it does
+			transmission := V(1, 1, 1)
+			lightRay := R(hit.Add(normal.MulS(LightBias)), light.Position.Sub(hit))
+
+			for _, other := range scene.Objects {
+				distance := math.MaxFloat64
+
+				if other.Intersects(lightRay, &distance) {
+					transmission = V(0, 0, 0)
+					break
+				}
+			}
+
+			sampledColor = sampledColor.Add(material.Diffuse).Mul(transmission).MulS(math.Max(0, normal.Dot(lightRay.Direction))).Mul(light.Emission)
+		}
 	}
 
 	return sampledColor
