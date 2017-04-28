@@ -10,7 +10,7 @@ type Scene struct {
 	Camera          Camera   // The scene camera
 	Lights          []Light  // The world light sources
 	Objects         []Object // The objects composing the scene itself
-	BackgroundColor Vector   // The background color of the scene
+	BackgroundColor Color    // The background color of the scene
 }
 
 // Represents a camera within the scene
@@ -21,12 +21,12 @@ type Camera struct {
 // Represents a light in the scene
 type Light struct {
 	Position Vector // The position of the light
-	Emission Vector // The emissive color of the light
+	Emissive Color  // The emissive color of the light
 }
 
 // Describes the material surface of an object within a scene
 type Material struct {
-	Diffuse      Vector  // The diffuse color of the material
+	Diffuse      Color   // The diffuse color of the material
 	Transparency float64 // The transparency level of the material (between 0.0 and 1.0 inclusive)
 	Reflectivity float64 // The reflectivity level of the material (between 0.0 and 1.0 inclusive)
 }

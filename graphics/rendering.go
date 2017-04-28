@@ -3,13 +3,10 @@ package graphics
 import (
 	"math"
 	"image"
-	"image/color"
 )
 
-const MaxDepth = 3 // The maximum depth for trace recursion
-
-// Ray-traces an RGBA image of the given dimensions using the given scene configuration
-func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
+// Renders an RGBA image of the given dimensions using the given scene configuration via ray-tracing
+func (scene *Scene) Render(dimensions image.Rectangle) (*image.RGBA) {
 	result := image.NewRGBA(dimensions)
 
 	width := result.Rect.Dx()
@@ -34,10 +31,9 @@ func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
 		pX := (2*((fx+0.5)/fwidth) - 1) * angle * aspectRatio
 		pY := 1 - 2*((fy+0.5)/fheight)*angle
 
-		origin := V(0, 0, 0)
 		direction := V(pX, pY, -1)
 
-		return R(origin, direction)
+		return R(Zero, direction)
 	}
 
 	// for every pixel in the resultant image
@@ -45,17 +41,17 @@ func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
 		for y := 0; y < height; y++ {
 			// project a ray into the scene and compute it's final color
 			ray := projectRay(x, y)
-			color := scene.trace(ray, 0, MaxDepth)
+			color := scene.sample(ray, 0, MaxTraceDepth)
 
-			result.Set(x, y, convertToRGBA(color))
+			result.Set(x, y, color.ConvertToRGBA())
 		}
 	}
 
 	return result
 }
 
-// Recursively traces a ray from the given the scene and computes it's resultant color
-func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
+// Samples the scene by projecting a ray and computes it's resultant color
+func (scene *Scene) sample(ray Ray, depth int, maxDepth int) Color {
 	// determines the closest object to the ray origin and computes the intersect hit and a
 	findIntersectingObject := func(ray Ray) (result Object, hit, normal Vector) {
 		nearest := math.MaxFloat64 // the nearest intersection
@@ -88,7 +84,7 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 	}
 
 	material := object.GetMaterial()
-	sampledColor := V(0, 0, 0) // the resultant color
+	sampledColor := Black // the resultant color
 
 	// compute reflection/refraction illumination up to a certain depth
 	if (material.Transparency > 0 || material.Reflectivity > 0) && depth < maxDepth {
@@ -113,11 +109,11 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 
 		// compute reflective and refractive color by recursively tracing light along reflective and
 		// refractive angles; the combine the resultant colours
-		reflectionColor := scene.trace(ray.Reflect(hit, normal), depth+1, maxDepth)
-		refractionColor := V(0, 0, 0)
+		reflectionColor := scene.sample(ray.Reflect(hit, normal), depth+1, maxDepth)
+		refractionColor := Black
 
 		if material.Transparency > 0 {
-			refractionColor = scene.trace(ray.Refract(hit, normal, inside), depth+1, maxDepth)
+			refractionColor = scene.sample(ray.Refract(hit, normal, inside), depth+1, maxDepth)
 		}
 
 		sampledColor = reflectionColor.MulS(fresnel).Add(refractionColor.MulS(1 - fresnel).MulS(material.Transparency)).Mul(material.Diffuse)
@@ -127,40 +123,22 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 			// project a ray from the hit point, accounting for a small bias in direction, toward
 			// the light position; we then determine whether another object occludes the light source and
 			// project a shadow if it does
-			transmission := V(1, 1, 1)
+			transmission := White
 			lightRay := R(hit.Add(normal.MulS(ε)), light.Position.Sub(hit))
 
 			for _, other := range scene.Objects {
 				distance := math.MaxFloat64
 
 				if other.Intersects(lightRay, &distance) {
-					transmission = V(0, 0, 0)
+					transmission = Black
 					break
 				}
 			}
 
 			// compute shaded color
-			sampledColor = sampledColor.Add(material.Diffuse).Mul(transmission).MulS(math.Max(0, normal.Dot(lightRay.Direction))).Mul(light.Emission)
+			sampledColor = sampledColor.Add(material.Diffuse).Mul(transmission).MulS(math.Max(0, normal.Dot(lightRay.Direction))).Mul(light.Emissive)
 		}
 	}
 
 	return sampledColor
-}
-
-// Converts a vector 3 in floating point range (0.0 to 1.0) to a color with the given channel values
-func convertToRGBA(vec Vector) color.RGBA {
-	// Clamps a floating point (0..1) into a (0..255) uint8
-	clamp := func(value float64) uint8 {
-		if value == 1.0 {
-			return 255
-		}
-		return uint8(math.Floor(value * 256.0))
-	}
-
-	return color.RGBA{
-		R: clamp(vec.X),
-		G: clamp(vec.Y),
-		B: clamp(vec.Z),
-		A: 255,
-	}
 }

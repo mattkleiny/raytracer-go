@@ -10,16 +10,13 @@ import (
 )
 
 var (
+	// command line flags and arguments
 	filenameFlag = flag.String("filename", "output.jpg", "filename of the resultant .jpg")
 	widthFlag    = flag.Int("width", 1000, "The width of the image to create")
 	heightFlag   = flag.Int("height", 1000, "The height of the image to create")
-)
 
-func main() {
-	parseCommandLine()
-
-	// create a simple scene with a few objects
-	scene := Scene{
+	// the scene that is being rendered
+	scene = Scene{
 		Camera: Camera{
 			FieldOfView: 75.0, // 75°
 		},
@@ -28,7 +25,7 @@ func main() {
 				Center: V(5.0, -1, -15),
 				Radius: 2,
 				Material: Material{
-					Diffuse:      V(0, 0, 1),
+					Diffuse:      Blue,
 					Reflectivity: 1.0,
 					Transparency: 0.5,
 				},
@@ -37,7 +34,7 @@ func main() {
 				Center: V(3.0, 0, -35),
 				Radius: 2,
 				Material: Material{
-					Diffuse:      V(0, 1, 0),
+					Diffuse:      Green,
 					Reflectivity: 1.0,
 					Transparency: 0.5,
 				},
@@ -46,7 +43,7 @@ func main() {
 				Center: V(-5.5, 0, -15),
 				Radius: 3,
 				Material: Material{
-					Diffuse:      V(1, 0, 0),
+					Diffuse:      Red,
 					Reflectivity: 1.0,
 					Transparency: 0.5,
 				},
@@ -55,16 +52,17 @@ func main() {
 		Lights: []Light{
 			{
 				Position: V(-20, 30, 20),
-				Emission: V(1.0, 1.0, 1.0),
+				Emissive: White,
 			},
 		},
-		BackgroundColor: V(1.0, 1.0, 1.0),
+		BackgroundColor: White,
 	}
+)
 
-	// trace the scene into an image so it can be rendered to file
-	image := scene.RayTraceToImage(image.Rect(0, 0, *widthFlag, *heightFlag))
-
-	// and render the image to file
+// Entry point for the application
+func main() {
+	parseCommandLine()
+	image := scene.Render(image.Rect(0, 0, *widthFlag, *heightFlag))
 	encodeToJpg(image, *filenameFlag)
 }
 
