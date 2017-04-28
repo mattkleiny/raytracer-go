@@ -21,12 +21,30 @@ func main() {
 	// create a simple scene with a few objects
 	scene := Scene{
 		Camera: Camera{
-			FieldOfView: 30.0, // 30°
+			FieldOfView: 75.0, // 75°
 		},
-		Spheres: []Sphere{
-			{
-				Center: V(0, 0, 0),
-				Radius: 8.0,
+		Objects: []Object{
+			&Sphere{
+				Center: V(5.0, -1, -15),
+				Radius: 2,
+				Material: Material{
+					Diffuse:      V(0, 1, 0),
+					Reflectivity: 0.0,
+					Transparency: 0.0,
+				},
+			},
+			&Sphere{
+				Center: V(3.0, 0, -35),
+				Radius: 1.5,
+				Material: Material{
+					Diffuse:      V(0, 1, 0),
+					Reflectivity: 0.0,
+					Transparency: 0.0,
+				},
+			},
+			&Sphere{
+				Center: V(-5.5, 0, -15),
+				Radius: 3,
 				Material: Material{
 					Diffuse:      V(0, 1, 0),
 					Reflectivity: 0.0,
