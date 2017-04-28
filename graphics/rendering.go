@@ -7,7 +7,6 @@ import (
 )
 
 const MaxDepth = 3 // The maximum depth for trace recursion
-const Bias = 1e-4  // suitable small directional bias for lighting calculations
 
 // Ray-traces an RGBA image of the given dimensions using the given scene configuration
 func (scene *Scene) RayTraceToImage(dimensions image.Rectangle) (*image.RGBA) {
@@ -129,7 +128,7 @@ func (scene *Scene) trace(ray Ray, depth int, maxDepth int) (Vector) {
 			// the light position; we then determine whether another object occludes the light source and
 			// project a shadow if it does
 			transmission := V(1, 1, 1)
-			lightRay := R(hit.Add(normal.MulS(Bias)), light.Position.Sub(hit))
+			lightRay := R(hit.Add(normal.MulS(ε)), light.Position.Sub(hit))
 
 			for _, other := range scene.Objects {
 				distance := math.MaxFloat64

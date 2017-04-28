@@ -129,7 +129,7 @@ func (r Ray) Refract(point, normal Vector, inside bool) Ray {
 	cosi := -normal.Dot(r.Direction)
 	k := 1 - eta*eta*(1-cosi*cosi)
 
-	origin := point.Sub(normal.MulS(Bias))
+	origin := point.Sub(normal.MulS(ε))
 	direction := r.Direction.MulS(eta).Add(normal.MulS(eta*cosi - math.Sqrt(k)))
 
 	return R(origin, direction)
