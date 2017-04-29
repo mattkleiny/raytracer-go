@@ -6,6 +6,8 @@ import (
 	"os"
 	"log"
 	"image/jpeg"
+	"image/png"
+	"strings"
 	. "github.com/xeusalmighty/raytracer/graphics"
 )
 
@@ -14,6 +16,7 @@ var (
 	filenameFlag = flag.String("filename", "output.jpg", "filename of the resultant .jpg")
 	widthFlag    = flag.Int("width", 1000, "The width of the image to create")
 	heightFlag   = flag.Int("height", 1000, "The height of the image to create")
+	encoder      = encodeToJpg
 
 	// the scene that is being rendered
 	scene = Scene{
@@ -62,8 +65,9 @@ var (
 // Entry point for the application
 func main() {
 	parseCommandLine()
+
 	image := scene.Render(image.Rect(0, 0, *widthFlag, *heightFlag))
-	encodeToJpg(image, *filenameFlag)
+	encoder(image, *filenameFlag)
 }
 
 // Parses the command line and reports any errors
@@ -73,6 +77,15 @@ func parseCommandLine() {
 	if *filenameFlag == "" {
 		flag.Usage()
 		log.Fatal("No filename specified")
+	}
+
+	if strings.HasSuffix(*filenameFlag, "png") {
+		encoder = encodeToPng
+	} else if strings.HasSuffix(*filenameFlag, "jpg") {
+		encoder = encodeToJpg
+	} else {
+		flag.Usage()
+		log.Fatal("Expected either a .jpg or .png file format")
 	}
 
 	if *widthFlag == 0 {
@@ -96,4 +109,16 @@ func encodeToJpg(image *image.RGBA, name string) {
 	defer output.Close()
 
 	jpeg.Encode(output, image, &jpeg.Options{jpeg.DefaultQuality})
+}
+
+// Encodes the given image to a .PNG file with the given name
+func encodeToPng(image *image.RGBA, name string) {
+	output, err := os.Create(name)
+
+	if err != nil {
+		panic(err)
+	}
+	defer output.Close()
+
+	png.Encode(output, image)
 }

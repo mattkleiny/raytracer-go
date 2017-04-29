@@ -51,7 +51,7 @@ func (scene *Scene) Render(dimensions image.Rectangle) (*image.RGBA) {
 }
 
 // Samples the scene by projecting a ray and computes it's resultant color
-func (scene *Scene) sample(ray Ray, depth int, maxDepth int) Color {
+func (scene *Scene) sample(ray Ray, depth, maxDepth int) Color {
 	// determines the closest object to the ray origin and computes the intersect hit and a
 	findIntersectingObject := func(ray Ray) (result Object, hit, normal Vector) {
 		nearest := math.MaxFloat64 // the nearest intersection
@@ -108,7 +108,7 @@ func (scene *Scene) sample(ray Ray, depth int, maxDepth int) Color {
 		fresnel := computeFresnel(ray.Direction, normal)
 
 		// compute reflective and refractive color by recursively tracing light along reflective and
-		// refractive angles; the combine the resultant colours
+		// refractive angles; then combine the resultant colours
 		reflectionColor := scene.sample(ray.Reflect(hit, normal), depth+1, maxDepth)
 		refractionColor := Black
 
@@ -130,7 +130,7 @@ func (scene *Scene) sample(ray Ray, depth int, maxDepth int) Color {
 				distance := math.MaxFloat64
 
 				if other.Intersects(lightRay, &distance) {
-					transmission = Black
+					transmission = Black // prevent color transmission; this object is in shadow
 					break
 				}
 			}
