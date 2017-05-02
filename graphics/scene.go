@@ -35,8 +35,8 @@ type Material struct {
 type Object interface {
 	// Calculates whether the object Intersects the given ray and returns the distance.
 	Intersects(ray Ray, distance *float64) bool
-	GetMaterial() *Material // The material of the object
-	GetPosition() Vector    // The center position of the object
+	GetMaterial() Material // The material of the object
+	GetPosition() Vector   // The center position of the object
 }
 
 // Represents a sphere that can be placed in a scene
@@ -47,7 +47,7 @@ type Sphere struct {
 }
 
 // Calculates whether the sphere Intersects with the given ray and returns the hit distance.
-func (sphere *Sphere) Intersects(ray Ray, distance *float64) bool {
+func (sphere Sphere) Intersects(ray Ray, distance *float64) bool {
 	to := ray.Origin.Sub(sphere.Center)
 
 	b := to.Dot(ray.Direction)
@@ -74,10 +74,10 @@ func (sphere *Sphere) Intersects(ray Ray, distance *float64) bool {
 	return false
 }
 
-func (sphere *Sphere) GetMaterial() *Material {
-	return &sphere.Material
+func (sphere Sphere) GetMaterial() Material {
+	return sphere.Material
 }
 
-func (sphere *Sphere) GetPosition() Vector {
+func (sphere Sphere) GetPosition() Vector {
 	return sphere.Center
 }
