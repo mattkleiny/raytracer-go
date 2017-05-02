@@ -104,7 +104,7 @@ func encodeToJpg(image *image.RGBA, name string) {
 	output, err := os.Create(name)
 
 	if err != nil {
-		panic(err)
+		log.Fatal("Failed to create output image: ", name, err)
 	}
 	defer output.Close()
 
@@ -116,7 +116,7 @@ func encodeToPng(image *image.RGBA, name string) {
 	output, err := os.Create(name)
 
 	if err != nil {
-		panic(err)
+		log.Fatal("Failed to create output image: ", name, err)
 	}
 	defer output.Close()
 
