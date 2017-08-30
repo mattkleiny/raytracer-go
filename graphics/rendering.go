@@ -1,12 +1,16 @@
+// Copyright 2017, the project authors. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE.md file.
+
 package graphics
 
 import (
-	"math"
 	"image"
+	"math"
 )
 
 // Renders an RGBA image of the given dimensions using the given scene configuration via ray-tracing
-func (scene *Scene) Render(dimensions image.Rectangle) (*image.RGBA) {
+func (scene *Scene) Render(dimensions image.Rectangle) *image.RGBA {
 	result := image.NewRGBA(dimensions)
 
 	width := result.Rect.Dx()

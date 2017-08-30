@@ -1,3 +1,7 @@
+// Copyright 2017, the project authors. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE.md file.
+
 package graphics
 
 const ε = 1e-9          // Minimum floating point precision

@@ -1,14 +1,18 @@
+// Copyright 2017, the project authors. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE.md file.
+
 package main
 
 import (
 	"flag"
+	. "github.com/xeusalmighty/raytracer/graphics"
 	"image"
-	"os"
-	"log"
 	"image/jpeg"
 	"image/png"
+	"log"
+	"os"
 	"strings"
-	. "github.com/xeusalmighty/raytracer/graphics"
 )
 
 var (
