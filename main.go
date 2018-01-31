@@ -5,8 +5,8 @@
 package main
 
 import (
+	. "bitbucket.org/mattklein/raytracer/graphics"
 	"flag"
-	. "github.com/xeusalmighty/raytracer/graphics"
 	"image"
 	"image/jpeg"
 	"image/png"
