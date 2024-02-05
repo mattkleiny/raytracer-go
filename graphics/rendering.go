@@ -35,7 +35,7 @@ func (scene *Scene) Render(dimensions image.Rectangle) *image.RGBA {
 		pX := (2*((fx+0.5)/fwidth) - 1) * angle * aspectRatio
 		pY := 1 - 2*((fy+0.5)/fheight)*angle
 
-		direction := V(pX, pY, -1)
+		direction := NewVec(pX, pY, -1)
 
 		return R(Zero, direction)
 	}

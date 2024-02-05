@@ -85,3 +85,7 @@ func (sphere Sphere) GetMaterial() Material {
 func (sphere Sphere) GetPosition() Vector {
 	return sphere.Center
 }
+
+func (sphere Sphere) GetRadius() float64 {
+	return sphere.Radius
+}

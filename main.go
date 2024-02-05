@@ -5,7 +5,6 @@
 package main
 
 import (
-	. "bitbucket.org/mattklein/raytracer/graphics"
 	"flag"
 	"image"
 	"image/jpeg"
@@ -13,6 +12,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	. "github.com/mattkleiny/raytracer-go/graphics"
 )
 
 var (
@@ -29,7 +30,7 @@ var (
 		},
 		Objects: []Object{
 			&Sphere{
-				Center: V(5.0, -1, -15),
+				Center: NewVec(5.0, -1, -15),
 				Radius: 2,
 				Material: Material{
 					Diffuse:      Blue,
@@ -38,7 +39,7 @@ var (
 				},
 			},
 			&Sphere{
-				Center: V(3.0, 0, -35),
+				Center: NewVec(3.0, 0, -35),
 				Radius: 2,
 				Material: Material{
 					Diffuse:      Green,
@@ -47,7 +48,7 @@ var (
 				},
 			},
 			&Sphere{
-				Center: V(-5.5, 0, -15),
+				Center: NewVec(-5.5, 0, -15),
 				Radius: 3,
 				Material: Material{
 					Diffuse:      Red,
@@ -58,7 +59,7 @@ var (
 		},
 		Lights: []Light{
 			{
-				Position: V(-20, 30, 20),
+				Position: NewVec(-20, 30, 20),
 				Emissive: White,
 			},
 		},
@@ -112,7 +113,7 @@ func encodeToJpg(image *image.RGBA, name string) {
 	}
 	defer output.Close()
 
-	jpeg.Encode(output, image, &jpeg.Options{jpeg.DefaultQuality})
+	jpeg.Encode(output, image, &jpeg.Options{Quality: jpeg.DefaultQuality})
 }
 
 // Encodes the given image to a .PNG file with the given name
@@ -125,4 +126,16 @@ func encodeToPng(image *image.RGBA, name string) {
 	defer output.Close()
 
 	png.Encode(output, image)
+}
+
+// SumIntsOrFloats sums the values of map m. It supports both int64 and float64
+// as types for map values.
+func SumIntsOrFloats[V int64 | float64](values []V) V {
+	var s V
+
+	for _, value := range values {
+		s += value
+	}
+
+	return s
 }
